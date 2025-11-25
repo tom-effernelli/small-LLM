@@ -1,5 +1,6 @@
 import torch
-
+import torch.nn as nn
+from torch.nn import functional as F
 torch.manual_seed(1337)
 
 with open('dataset.txt', 'r', encoding='utf-8') as f:
@@ -29,3 +30,12 @@ def get_batch(split):
     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
     return x, y
 
+class BigramLanguageModel(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
+
+    def forward(self, idx, targets):
+        logits = self.token_embedding_table(idx)
+        return logits
