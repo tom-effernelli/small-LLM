@@ -1,7 +1,18 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+
 torch.manual_seed(1337)
+
+# Hyperparameters
+batch_size = 32
+block_size = 8
+max_iters = 3000
+eval_interval = 300
+learning_rate = 1e-3
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+eval_iters = 200
+# -------------
 
 # Opening dataset
 with open('dataset.txt', 'r', encoding='utf-8') as f:
@@ -22,9 +33,6 @@ data = torch.tensor(encode(text), dtype=torch.long)
 k = int(0.9*len(data))
 train_data = data[:k]
 val_data = data[k:]
-
-batch_size = 32
-block_size = 8
 
 # Returns batchs of data blocks with size block_size
 def get_batch(split):
