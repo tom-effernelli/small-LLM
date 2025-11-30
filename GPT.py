@@ -62,8 +62,15 @@ class BigramLanguageModel(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
         return idx
 
-# Testing phase
+
 m = BigramLanguageModel()
-xb, yb = get_batch('train')
-logits, loss = m(xb, yb)
-print(decode(m.generate(idx=torch.zeros((1,1), dtype=torch.long), max_new_tokens=100)[0].tolist()))
+optimizer = torch.optim.AdamW(m.parameters(), lr=1e-3)
+
+# Training loop
+for steps in range(1000):
+    xb, yb = get_batch('train')
+
+    logits, loss = m(xb, yb)
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    optimizer.step()
