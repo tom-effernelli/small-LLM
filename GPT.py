@@ -23,7 +23,7 @@ k = int(0.9*len(data))
 train_data = data[:k]
 val_data = data[k:]
 
-batch_size = 4
+batch_size = 32
 block_size = 8
 
 # Returns batchs of data blocks with size block_size
@@ -74,3 +74,6 @@ for steps in range(1000):
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
+
+# Testing phase
+print(decode(m.generate(idx=torch.zeros((1,1), dtype=torch.long), max_new_tokens=500)[0].tolist()))
