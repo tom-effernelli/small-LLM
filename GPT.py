@@ -90,7 +90,7 @@ class BigramLanguageModel(nn.Module):
         tok_embd = self.token_embedding_table(idx) # (B,T,C)
         pos_embd = self.position_embedding_table(torch.arange(T, device=device)) # (T, C)
         x = tok_embd + pos_embd # (B, T, C)
-        x = sa_head(x)
+        x = self.sa_head(x)
         logits = self.lm_head(x) # (B, T, vocab_size)
 
         if targets is None:
@@ -106,7 +106,7 @@ class BigramLanguageModel(nn.Module):
     def generate(self, idx, max_new_tokens):
         for _ in range(max_new_tokens):
             idx_cond = idx[:, -block_size:]
-            logits, loss = self(idx)
+            logits, loss = self(idx_cond)
             logits = logits[:, -1, :] # (B, C)
             probs = F.softmax(logits, dim=1) # (B, C)
             idx_next = torch.multinomial(probs, num_samples=1) # (B, 1)
