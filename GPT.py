@@ -57,19 +57,41 @@ def estimate_loss():
     model.train()
     return out
 
+class Head(nn.Module):
+    def __init__(self, head_size):
+        super().__init__()
+        self.key = nn.Linear(n_embd, head_size, bias=False)
+        self.query = nn.Linear(n_embd, head_size, bias=False)
+        self.value = nn.Linear(n_embd, head_size, bias=False)
+        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
+
+    def forward(self, x):
+        B, T, C = x.shape
+        k = self.key(x) # (B, T, head_size)
+        q = self.query(x) # (B, T, head_size)
+        v = self.value(x) # (B, T, head_size)
+        wei = q @ k.transpose(-2, -1) * C**-0.5 # (B, T, T)
+        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)
+        wei = F.softmax(wei, dim=-1) # (B, T, T)
+        return wei @ v # (B, T, head_size)
+
 class BigramLanguageModel(nn.Module):
 
     def __init__(self):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
+        self.sa_head = Head(n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)
 
     def forward(self, idx, targets=None):
+        B, T = idx.shape
+
         tok_embd = self.token_embedding_table(idx) # (B,T,C)
         pos_embd = self.position_embedding_table(torch.arange(T, device=device)) # (T, C)
         x = tok_embd + pos_embd # (B, T, C)
-        logits = self.lm_head(tok_embd) # (B, T, vocab_size)
+        x = sa_head(x)
+        logits = self.lm_head(x) # (B, T, vocab_size)
 
         if targets is None:
             loss = None
@@ -83,6 +105,7 @@ class BigramLanguageModel(nn.Module):
 
     def generate(self, idx, max_new_tokens):
         for _ in range(max_new_tokens):
+            idx_cond = idx[:, -block_size:]
             logits, loss = self(idx)
             logits = logits[:, -1, :] # (B, C)
             probs = F.softmax(logits, dim=1) # (B, C)
