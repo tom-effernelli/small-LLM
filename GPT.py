@@ -51,6 +51,7 @@ def estimate_loss():
         losses = torch.zeros(eval_iters)
         for k in range(eval_iters):
             X, Y = get_batch(split)
+            X, Y = X.to(device), Y.to(device)
             logits, loss = model(X, Y)
             losses[k] = loss.item()
         out[split] = losses.mean()
@@ -88,7 +89,7 @@ class BigramLanguageModel(nn.Module):
         B, T = idx.shape
 
         tok_embd = self.token_embedding_table(idx) # (B,T,C)
-        pos_embd = self.position_embedding_table(torch.arange(T, device=device)) # (T, C)
+        pos_embd = self.position_embedding_table(torch.arange(T, device=idx.device)) # (T, C)
         x = tok_embd + pos_embd # (B, T, C)
         x = self.sa_head(x)
         logits = self.lm_head(x) # (B, T, vocab_size)
@@ -114,7 +115,7 @@ class BigramLanguageModel(nn.Module):
         return idx
 
 
-model = BigramLanguageModel()
+model = BigramLanguageModel().to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
 # Training loop
@@ -126,7 +127,7 @@ for iter in range(max_iters):
 
 
     xb, yb = get_batch('train')
-
+    xb, yb = xb.to(device), yb.to(device)
     logits, loss = model(xb, yb)
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
