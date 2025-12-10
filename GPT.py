@@ -97,6 +97,7 @@ class FeedForward(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(n_embd, n_embd),
             nn.ReLU(),
+            nn.Linear(n_embd, n_embd),
         )
 
     def forward(self, x):
@@ -135,8 +136,7 @@ class BigramLanguageModel(nn.Module):
         tok_embd = self.token_embedding_table(idx) # (B,T,C)
         pos_embd = self.position_embedding_table(torch.arange(T, device=idx.device)) # (T, C)
         x = tok_embd + pos_embd # (B, T, C)
-        x = self.sa_heads(x)
-        x = self.ffwd(x) # (B, T, C)
+        x = self.blocks(x)
         logits = self.lm_head(x) # (B, T, vocab_size)
 
         if targets is None:
