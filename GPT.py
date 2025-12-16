@@ -5,15 +5,17 @@ import os
 
 torch.manual_seed(1337)
 
+mode = 'gen' # 'gen' || 'train'
+
 # Hyperparameters
-batch_size = 64
-block_size = 256
-max_iters = 5000
-eval_interval = 500
-learning_rate = 3e-4
+batch_size = 32
+block_size = 8
+max_iters = 3000
+eval_interval = 300
+learning_rate = 1e-2
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_iters = 200
-n_embd = 384
+n_embd = 32
 n_head = 6
 n_layer = 6
 dropout = 0.2
@@ -182,25 +184,26 @@ if os.path.exists(model_save_path) and os.path.exists(optimizer_save_path):
 else:
     print("Aucune sauvegarde trouvée, entraînement à partir de zéro.")
 
-# Training loop
-for iter in range(max_iters):
+if mode == 'train':
+    # Training loop
+    for iter in range(max_iters):
 
-    if iter % eval_interval == 0:
-        losses = estimate_loss()
-        print(f"Step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+        if iter % eval_interval == 0:
+            losses = estimate_loss()
+            print(f"Step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
 
-    xb, yb = get_batch('train')
-    xb, yb = xb.to(device), yb.to(device)
-    logits, loss = model(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    optimizer.step()
+        xb, yb = get_batch('train')
+        xb, yb = xb.to(device), yb.to(device)
+        logits, loss = model(xb, yb)
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        optimizer.step()
 
-# Sauvegarde du modèle et de l'optimiseur
-torch.save(model.state_dict(), model_save_path)
-torch.save(optimizer.state_dict(), optimizer_save_path)
-print(f"Modèle sauvegardé dans {model_save_path} et optimiseur dans {optimizer_save_path}")
+    # Sauvegarde du modèle et de l'optimiseur
+    torch.save(model.state_dict(), model_save_path)
+    torch.save(optimizer.state_dict(), optimizer_save_path)
+    print(f"Modèle sauvegardé dans {model_save_path} et optimiseur dans {optimizer_save_path}")
 
 # Testing phase
 print(decode(model.generate(idx=torch.zeros((1,1), dtype=torch.long, device=device), max_new_tokens=500)[0].tolist()))
