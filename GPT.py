@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+import os
 
 torch.manual_seed(1337)
 
@@ -17,6 +18,9 @@ n_head = 6
 n_layer = 6
 dropout = 0.2
 # -------------
+
+model_save_path = "model.pt"
+optimizer_save_path = "optimizer.pt"
 
 # Opening dataset
 with open('dataset.txt', 'r', encoding='utf-8') as f:
@@ -170,6 +174,14 @@ class BigramLanguageModel(nn.Module):
 model = BigramLanguageModel().to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
+if os.path.exists(model_save_path) and os.path.exists(optimizer_save_path):
+    model.load_state_dict(torch.load(model_save_path, map_location=device))
+    optimizer.load_state_dict(torch.load(optimizer_save_path, map_location=device))
+    model.to(device)  # s'assurer qu'il est bien sur le bon device
+    print("Modèle et optimiseur rechargés depuis les fichiers de sauvegarde.")
+else:
+    print("Aucune sauvegarde trouvée, entraînement à partir de zéro.")
+
 # Training loop
 for iter in range(max_iters):
 
@@ -184,6 +196,11 @@ for iter in range(max_iters):
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
+
+# Sauvegarde du modèle et de l'optimiseur
+torch.save(model.state_dict(), model_save_path)
+torch.save(optimizer.state_dict(), optimizer_save_path)
+print(f"Modèle sauvegardé dans {model_save_path} et optimiseur dans {optimizer_save_path}")
 
 # Testing phase
 print(decode(model.generate(idx=torch.zeros((1,1), dtype=torch.long, device=device), max_new_tokens=500)[0].tolist()))
