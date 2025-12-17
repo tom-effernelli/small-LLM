@@ -169,6 +169,8 @@ class BigramLanguageModel(nn.Module):
             logits = logits[:, -1, :] # (B, C)
             probs = F.softmax(logits, dim=1) # (B, C)
             idx_next = torch.multinomial(probs, num_samples=1) # (B, 1)
+            # Afficher le token généré au fur et à mesure
+            print(decode(idx_next[0].tolist()), end='', flush=True)
             idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
         return idx
 
@@ -180,9 +182,9 @@ if os.path.exists(model_save_path) and os.path.exists(optimizer_save_path):
     model.load_state_dict(torch.load(model_save_path, map_location=device))
     optimizer.load_state_dict(torch.load(optimizer_save_path, map_location=device))
     model.to(device)  # s'assurer qu'il est bien sur le bon device
-    print("Modèle et optimiseur rechargés depuis les fichiers de sauvegarde.")
+    print("########## Modèle et optimiseur rechargés depuis les fichiers de sauvegarde.")
 else:
-    print("Aucune sauvegarde trouvée, entraînement à partir de zéro.")
+    print("########## Aucune sauvegarde trouvée, entraînement à partir de zéro.")
 
 if mode == 'train':
     # Training loop
@@ -190,7 +192,7 @@ if mode == 'train':
 
         if iter % eval_interval == 0:
             losses = estimate_loss()
-            print(f"Step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+            print(f"########## Step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
 
         xb, yb = get_batch('train')
@@ -203,7 +205,8 @@ if mode == 'train':
     # Sauvegarde du modèle et de l'optimiseur
     torch.save(model.state_dict(), model_save_path)
     torch.save(optimizer.state_dict(), optimizer_save_path)
-    print(f"Modèle sauvegardé dans {model_save_path} et optimiseur dans {optimizer_save_path}")
+    print(f"########## Modèle sauvegardé dans {model_save_path} et optimiseur dans {optimizer_save_path}")
 
 # Testing phase
-print(decode(model.generate(idx=torch.zeros((1,1), dtype=torch.long, device=device), max_new_tokens=500)[0].tolist()))
+model.generate(idx=torch.zeros((1,1), dtype=torch.long, device=device), max_new_tokens=500)
+print()  # Nouvelle ligne à la fin
