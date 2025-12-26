@@ -1,4 +1,4 @@
-# GPT - Implémentation d'un Modèle de Langage Transformer
+# small-LLM - Implémentation d'un Modèle de Langage Transformer
 
 Une implémentation simple d'un modèle de langage de type GPT (Generative Pre-trained Transformer) en PyTorch.
 
